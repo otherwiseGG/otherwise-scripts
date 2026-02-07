@@ -47,8 +47,7 @@ echo "Authorized access only. All activity may be monitored and reported." > /et
 if ! grep -q "^Banner" /etc/ssh/sshd_config; then
     echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
 else
-    sed -i 's|^#Banner.*|Banner /etc/issue.net|' /etc/ssh/sshd_config
-    sed -i 's|^Banner.*|Banner /etc/issue.net|' /etc/ssh/sshd_config
+    sed -i 's|^#\?Banner.*|Banner /etc/issue.net|' /etc/ssh/sshd_config
 fi
 
 systemctl restart ssh
@@ -70,19 +69,20 @@ sysctl --system
 echo "### [5/10] Sudo Command Logging aktivieren..."
 # Enable logging of sudo commands
 echo "Enabling logging of sudo commands..."
-if ! grep -q "^Defaults logfile=" /etc/sudoers; then
-    echo "Defaults logfile=/var/log/sudo.log" >> /etc/sudoers
+if ! grep -q "^Defaults logfile=" /etc/sudoers.d/* 2>/dev/null; then
+    echo "Defaults logfile=/var/log/sudo.log" > /etc/sudoers.d/sudo-logging
+    chmod 440 /etc/sudoers.d/sudo-logging
 fi
 
 echo "### [6/10] Starke Passwort-Richtlinien setzen..."
 # Set strong password policies
 echo "Setting strong password policies..."
 if [ -f /etc/security/pwquality.conf ]; then
-    sed -i 's/^# minlen.*/minlen = 12/' /etc/security/pwquality.conf
-    sed -i 's/^# dcredit.*/dcredit = -1/' /etc/security/pwquality.conf
-    sed -i 's/^# ucredit.*/ucredit = -1/' /etc/security/pwquality.conf
-    sed -i 's/^# lcredit.*/lcredit = -1/' /etc/security/pwquality.conf
-    sed -i 's/^# ocredit.*/ocredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^#\? \?minlen.*/minlen = 12/' /etc/security/pwquality.conf
+    sed -i 's/^#\? \?dcredit.*/dcredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^#\? \?ucredit.*/ucredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^#\? \?lcredit.*/lcredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^#\? \?ocredit.*/ocredit = -1/' /etc/security/pwquality.conf
 fi
 
 echo "### [7/10] Shared Memory absichern..."
