@@ -44,7 +44,12 @@ echo "AllowUsers $NEW_USER" >> /etc/ssh/sshd_config
 # Configure login banner
 echo "Configuring login banner..."
 echo "Authorized access only. All activity may be monitored and reported." > /etc/issue.net
-sed -i 's/^#Banner.*/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
+if ! grep -q "^Banner" /etc/ssh/sshd_config; then
+    echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
+else
+    sed -i 's|^#Banner.*|Banner /etc/issue.net|' /etc/ssh/sshd_config
+    sed -i 's|^Banner.*|Banner /etc/issue.net|' /etc/ssh/sshd_config
+fi
 
 systemctl restart ssh
 
@@ -72,11 +77,13 @@ fi
 echo "### [6/10] Starke Passwort-Richtlinien setzen..."
 # Set strong password policies
 echo "Setting strong password policies..."
-sed -i 's/^# minlen.*/minlen = 12/' /etc/security/pwquality.conf
-sed -i 's/^# dcredit.*/dcredit = -1/' /etc/security/pwquality.conf
-sed -i 's/^# ucredit.*/ucredit = -1/' /etc/security/pwquality.conf
-sed -i 's/^# lcredit.*/lcredit = -1/' /etc/security/pwquality.conf
-sed -i 's/^# ocredit.*/ocredit = -1/' /etc/security/pwquality.conf
+if [ -f /etc/security/pwquality.conf ]; then
+    sed -i 's/^# minlen.*/minlen = 12/' /etc/security/pwquality.conf
+    sed -i 's/^# dcredit.*/dcredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^# ucredit.*/ucredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^# lcredit.*/lcredit = -1/' /etc/security/pwquality.conf
+    sed -i 's/^# ocredit.*/ocredit = -1/' /etc/security/pwquality.conf
+fi
 
 echo "### [7/10] Shared Memory absichern..."
 # Secure shared memory
@@ -95,6 +102,14 @@ echo "### [9/10] Cron-Jobs auf autorisierte Benutzer beschränken..."
 echo "Restricting cron jobs to authorized users..."
 touch /etc/cron.allow
 chmod 600 /etc/cron.allow
+# Allow the NEW_USER to use cron
+if ! grep -q "^$NEW_USER$" /etc/cron.allow 2>/dev/null; then
+    echo "$NEW_USER" >> /etc/cron.allow
+fi
+# Ensure root can also use cron
+if ! grep -q "^root$" /etc/cron.allow 2>/dev/null; then
+    echo "root" >> /etc/cron.allow
+fi
 
 echo "### [10/10] Core Dumps deaktivieren und Automatische Sicherheitsupdates aktivieren..."
 # Disable core dumps
