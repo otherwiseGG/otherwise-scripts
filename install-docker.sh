@@ -1,32 +1,32 @@
 #!/bin/bash
-
-# Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "--- Starting Docker Installation ---"
+echo "--- Fixing Docker Repo for Debian Trixie ---"
 
-# 1. Update system packages
+# 1. Clean up the old, incorrect list file
+sudo rm -f /etc/apt/sources.list.d/docker.list
+
+# 2. Ensure dependencies are there
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 
-# 2. Add Docker's official GPG key
+# 3. Add Docker's official GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# 3. Set up the repository
+# 4. Set up the repo (Manually pointing to 'bookworm' since 'trixie' isn't live yet)
 echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  bookworm stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# 4. Install Docker Engine, CLI, and Compose
+# 5. Install
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# 5. Manage Docker as a non-root user (Optional but recommended)
-# This allows you to run 'docker' commands without 'sudo'
+# 6. Permissions
 sudo usermod -aG docker $USER
 
-echo "--- Installation Complete ---"
-echo "NOTE: Please log out and log back in for group changes to take effect."
+echo "--- Success! ---"
+echo "Please log out and back in to use docker without sudo."
