@@ -1,32 +1,33 @@
 #!/bin/bash
 set -e
 
-echo "--- Fixing Docker Repo for Debian Trixie ---"
+echo "--- Starting Docker Installation for Debian Trixie ---"
 
-# 1. Clean up the old, incorrect list file
-sudo rm -f /etc/apt/sources.list.d/docker.list
-
-# 2. Ensure dependencies are there
+# 1. Update and install prerequisite packages
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 
-# 3. Add Docker's official GPG key
+# 2. Add Docker's official GPG key for Debian
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# 4. Set up the repo (Manually pointing to 'bookworm' since 'trixie' isn't live yet)
+# 3. Add the Docker Repository
+# We hardcode 'bookworm' because 'trixie' (testing) doesn't have its own repo yet
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
   bookworm stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# 5. Install
+# 4. Install Docker Engine and Plugins
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# 6. Permissions
+# 5. Enable and start Docker service
+sudo systemctl enable --now docker
+
+# 6. Add current user to the docker group
 sudo usermod -aG docker $USER
 
-echo "--- Success! ---"
-echo "Please log out and back in to use docker without sudo."
+echo "--- Installation Complete! ---"
+echo "IMPORTANT: Run 'newgrp docker' or log out/in to use Docker without sudo."
