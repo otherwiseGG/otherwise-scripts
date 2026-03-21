@@ -148,7 +148,12 @@ kernel.yama.ptrace_scope = 1
 fs.suid_dumpable = 0
 EOF
 
-sysctl -p /etc/sysctl.d/99-hardening.conf
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+  key=$(echo "$line" | cut -d= -f1 | tr -d ' ')
+  val=$(echo "$line" | cut -d= -f2 | tr -d ' ')
+  sysctl -w "${key}=${val}" 2>/dev/null || echo "  ⚠ skipped (permission denied): $key"
+done < /etc/sysctl.d/99-hardening.conf
 
 echo "[8/9] Restarting SSH (new port: $SSH_PORT) ..."
 systemctl restart sshd
